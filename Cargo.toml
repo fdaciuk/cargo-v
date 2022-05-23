@@ -1,0 +1,10 @@
+[package]
+name = "cargo-v"
+version = "0.0.0"
+edition = "2021"
+description = "Update the version of your package easily"
+license = "MIT"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
