@@ -1,5 +1,10 @@
 use cargo_v;
-use std::{env, error::Error, fs, process::Command};
+use std::{
+  env,
+  error::Error,
+  fs,
+  process::{self, Command},
+};
 
 fn main() {
   let mut args = env::args();
@@ -30,6 +35,7 @@ fn main() {
   git_add();
   git_commit(&new_version);
   git_tag(&new_version);
+  process::exit(0);
 }
 
 fn update_cargo_toml(new_content: &str) -> Result<(), Box<dyn Error>> {
