@@ -5,7 +5,10 @@ pub enum VersionLabel {
   NumericVersion(String),
 }
 
-pub fn update_version(cargo_toml_content: &str, label: VersionLabel) -> String {
+pub fn update_version(
+  cargo_toml_content: &str,
+  label: &VersionLabel,
+) -> String {
   let current_version_tuple = get_version(&cargo_toml_content);
   let (major, minor, patch) = current_version_tuple;
   let new_version = match label {
@@ -13,19 +16,19 @@ pub fn update_version(cargo_toml_content: &str, label: VersionLabel) -> String {
     VersionLabel::Minor => format!("{}.{}.0", major, minor + 1),
     VersionLabel::Patch => format!("{}.{}.{}", major, minor, patch + 1),
     VersionLabel::NumericVersion(v) => {
-      parse_numeric_version(current_version_tuple, v)
+      parse_numeric_version(&current_version_tuple, v)
     }
   };
 
   cargo_toml_content.replace(
-    &tuple_version_to_string(current_version_tuple),
+    &tuple_version_to_string(&current_version_tuple),
     &new_version,
   )
 }
 
 fn parse_numeric_version(
-  current_version_tuple: (u32, u32, u32),
-  numeric_version: String,
+  current_version_tuple: &(u32, u32, u32),
+  numeric_version: &str,
 ) -> String {
   let new_version = numeric_version.replace("v", "");
   let current_version_string = tuple_version_to_string(current_version_tuple);
@@ -44,7 +47,7 @@ fn string_version_to_number(version: &str) -> u32 {
   version.replace(".", "").parse().unwrap()
 }
 
-pub fn tuple_version_to_string(tuple_version: (u32, u32, u32)) -> String {
+pub fn tuple_version_to_string(tuple_version: &(u32, u32, u32)) -> String {
   format!(
     "{}.{}.{}",
     tuple_version.0, tuple_version.1, tuple_version.2,
@@ -104,7 +107,7 @@ mod tests {
     let new_version = VersionLabel::Patch;
     let expected = "[package]\n name = \"cargo-v\"\n version = \"0.0.2\"\n";
 
-    assert_eq!(update_version(&cargo_toml, new_version), expected);
+    assert_eq!(update_version(&cargo_toml, &new_version), expected);
   }
 
   #[test]
@@ -114,7 +117,7 @@ mod tests {
     let new_version = VersionLabel::Minor;
     let expected = "[package]\n name = \"cargo-v\"\n version = \"0.1.0\"\n";
 
-    assert_eq!(update_version(&cargo_toml, new_version), expected);
+    assert_eq!(update_version(&cargo_toml, &new_version), expected);
   }
 
   #[test]
@@ -124,7 +127,7 @@ mod tests {
     let new_version = VersionLabel::Major;
     let expected = "[package]\n name = \"cargo-v\"\n version = \"1.0.0\"\n";
 
-    assert_eq!(update_version(&cargo_toml, new_version), expected);
+    assert_eq!(update_version(&cargo_toml, &new_version), expected);
   }
 
   #[test]
@@ -134,7 +137,7 @@ mod tests {
     let new_version = VersionLabel::NumericVersion(String::from("0.0.2"));
     let expected = "[package]\n name = \"cargo-v\"\n version = \"0.0.2\"\n";
 
-    assert_eq!(update_version(&cargo_toml, new_version), expected);
+    assert_eq!(update_version(&cargo_toml, &new_version), expected);
   }
 
   #[test]
@@ -144,7 +147,7 @@ mod tests {
     let new_version = VersionLabel::NumericVersion(String::from("0.1.0"));
     let expected = "[package]\n name = \"cargo-v\"\n version = \"0.1.0\"\n";
 
-    assert_eq!(update_version(&cargo_toml, new_version), expected);
+    assert_eq!(update_version(&cargo_toml, &new_version), expected);
   }
 
   #[test]
@@ -155,7 +158,7 @@ mod tests {
     let expected =
       String::from("[package]\n name = \"cargo-v\"\n version = \"3.0.0\"\n");
 
-    assert_eq!(update_version(&cargo_toml, new_version), expected);
+    assert_eq!(update_version(&cargo_toml, &new_version), expected);
   }
 
   #[test]
@@ -166,7 +169,7 @@ mod tests {
     let expected =
       String::from("[package]\n name = \"cargo-v\"\n version = \"3.0.0\"\n");
 
-    assert_eq!(update_version(&cargo_toml, new_version), expected);
+    assert_eq!(update_version(&cargo_toml, &new_version), expected);
   }
 
   #[test]
@@ -177,7 +180,7 @@ mod tests {
     let cargo_toml =
       String::from("[package]\n name = \"cargo-v\"\n version = \"2.2.0\"\n");
     let new_version = VersionLabel::NumericVersion(String::from("2.1.1"));
-    update_version(&cargo_toml, new_version);
+    update_version(&cargo_toml, &new_version);
   }
 
   #[test]
@@ -187,6 +190,6 @@ mod tests {
     let cargo_toml =
       String::from("[package]\n name = \"cargo-v\"\n version = \"2.2.0\"\n");
     let new_version = VersionLabel::NumericVersion(String::from("-2.2.1"));
-    update_version(&cargo_toml, new_version);
+    update_version(&cargo_toml, &new_version);
   }
 }
