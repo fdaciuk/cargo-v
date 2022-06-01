@@ -24,7 +24,7 @@ fn main() {
   let new_version = cargo_v::tuple_version_to_string(new_version);
 
   if update_cargo_toml(&cargo_toml_updated).is_err() {
-    println!("Deu erro na hora de gravar o arquivo Cargo.toml");
+    println!("Error trying to write on file Cargo.toml");
   }
 
   git_add();
@@ -34,21 +34,25 @@ fn main() {
 
 fn update_cargo_toml(new_content: &str) -> Result<(), Box<dyn Error>> {
   fs::write("./Cargo.toml", new_content)?;
+  Command::new("cargo").args(["build"]).spawn()?;
   Ok(())
 }
 
 fn git_add() {
-  let _ = Command::new("echo").args(["git add ."]).spawn();
-}
-
-fn git_commit(version: &str) {
-  let _ = Command::new("echo")
-    .args([format!("git commit -m 'v{}'", version)])
+  let _ = Command::new("git")
+    .args(["add", "Cargo.toml", "Cargo.lock"])
     .spawn();
 }
 
+fn git_commit(version: &str) {
+  let version = &format!("'v{}'", version);
+  let _ = Command::new("git").args(["commit", "-m", version]).spawn();
+}
+
 fn git_tag(version: &str) {
-  let _ = Command::new("echo")
-    .args([format!("git tag -a v{v} -m 'v{v}'", v = version)])
+  let version = &format!("v{}", version);
+  let message = &format!("'{}'", version);
+  let _ = Command::new("git")
+    .args(["tag", "-a", version, "-m", message])
     .spawn();
 }
