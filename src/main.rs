@@ -1,10 +1,7 @@
 use cargo_v;
-use std::{
-  env,
-  error::Error,
-  fs,
-  process::{self, Command},
-};
+use std::error::Error;
+use std::process::{self, Command};
+use std::{env, fs};
 
 fn main() {
   let mut args = env::args();
@@ -14,7 +11,7 @@ fn main() {
     .next()
     .expect("You must pass the version (patch, minor, major)");
 
-  let file =
+  let cargo_toml =
     fs::read_to_string("./Cargo.toml").expect("Can't read Cargo.toml file.");
 
   let new_version_enum = match new_version_input.as_str() {
@@ -24,11 +21,13 @@ fn main() {
     v => cargo_v::VersionLabel::NumericVersion(String::from(v)),
   };
 
-  let cargo_toml_updated = cargo_v::update_version(&file, new_version_enum);
-  let new_version = cargo_v::get_version(&cargo_toml_updated);
-  let new_version = cargo_v::tuple_version_to_string(new_version);
+  let cargo_toml_updated =
+    cargo_v::update_version(&cargo_toml, &new_version_enum);
 
-  if update_cargo_toml(&cargo_toml_updated).is_err() {
+  let new_version = cargo_v::get_version(&cargo_toml_updated);
+  let new_version = cargo_v::tuple_version_to_string(&new_version);
+
+  if update_cargo_files(&cargo_toml_updated).is_err() {
     println!("Error trying to write on file Cargo.toml");
   }
 
@@ -38,9 +37,9 @@ fn main() {
   process::exit(0);
 }
 
-fn update_cargo_toml(new_content: &str) -> Result<(), Box<dyn Error>> {
-  fs::write("./Cargo.toml", new_content)?;
-  Command::new("cargo").args(["build"]).spawn()?;
+fn update_cargo_files(new_cargo_toml: &str) -> Result<(), Box<dyn Error>> {
+  fs::write("./Cargo.toml", new_cargo_toml)?;
+  Command::new("cargo").args(["build", "--release"]).spawn()?;
   Ok(())
 }
 
