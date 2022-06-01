@@ -1,5 +1,5 @@
 use cargo_v;
-use std::{env, fs, process::Command};
+use std::{env, error::Error, fs, process::Command};
 
 fn main() {
   let mut args = env::args();
@@ -23,9 +23,18 @@ fn main() {
   let new_version = cargo_v::get_version(&cargo_toml_updated);
   let new_version = cargo_v::tuple_version_to_string(new_version);
 
+  if update_cargo_toml(&cargo_toml_updated).is_err() {
+    println!("Deu erro na hora de gravar o arquivo Cargo.toml");
+  }
+
   git_add();
   git_commit(&new_version);
   git_tag(&new_version);
+}
+
+fn update_cargo_toml(new_content: &str) -> Result<(), Box<dyn Error>> {
+  fs::write("./Cargo.toml", new_content)?;
+  Ok(())
 }
 
 fn git_add() {
