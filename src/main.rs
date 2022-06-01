@@ -46,7 +46,7 @@ fn update_cargo_toml(new_cargo_toml: &str) -> Result<(), Box<dyn Error>> {
 
 fn run_build() {
   Command::new("cargo")
-    .args(["build", "--release", "--quiet"])
+    .args(["build", "--release"])
     .output()
     .expect("Failed to build project.");
 }
