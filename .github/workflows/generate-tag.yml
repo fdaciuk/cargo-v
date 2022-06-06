@@ -22,8 +22,8 @@ jobs:
       with:
         ref: main
     - run: |
-      git config user.name github-actions
-      git config user.email github-actions@github.com
+        git config user.name github-actions
+        git config user.email github-actions@github.com
 
     - name: Install cargo-v
       run: cargo install cargo-v
