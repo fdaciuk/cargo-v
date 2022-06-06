@@ -5,15 +5,13 @@ use std::{env, fs};
 
 fn main() {
   let mut args = env::args();
-  println!("args:");
-  dbg!(&args);
+
+  args.next();
   args.next();
 
   let new_version_input = args
     .next()
     .expect("You must pass the version (patch, minor, major)");
-
-  println!("new_version_input: {new_version_input}");
 
   let cargo_toml =
     fs::read_to_string("./Cargo.toml").expect("Can't read Cargo.toml file.");
@@ -22,15 +20,6 @@ fn main() {
     "patch" => cargo_v::VersionLabel::Patch,
     "minor" => cargo_v::VersionLabel::Minor,
     "major" => cargo_v::VersionLabel::Major,
-    "v" => match args.next() {
-      None => panic!("You must pass the version (patch, minor, major)"),
-      Some(v) => match v.as_str() {
-        "patch" => cargo_v::VersionLabel::Patch,
-        "minor" => cargo_v::VersionLabel::Minor,
-        "major" => cargo_v::VersionLabel::Major,
-        v => cargo_v::VersionLabel::NumericVersion(String::from(v)),
-      },
-    },
     v => cargo_v::VersionLabel::NumericVersion(String::from(v)),
   };
 
