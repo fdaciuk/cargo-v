@@ -3,7 +3,7 @@ use std::error::Error;
 use std::process::{self, Command};
 use std::{env, fs};
 
-fn main() {
+fn main() -> Result<(), Box<dyn Error>> {
   let mut args = env::args();
 
   args.next();
@@ -24,9 +24,9 @@ fn main() {
   };
 
   let cargo_toml_updated =
-    cargo_v::update_version(&cargo_toml, &new_version_enum);
+    cargo_v::update_version(&cargo_toml, &new_version_enum)?;
 
-  let new_version = cargo_v::get_version(&cargo_toml_updated);
+  let new_version = cargo_v::get_version(&cargo_toml_updated)?;
   let new_version = cargo_v::tuple_version_to_string(&new_version);
 
   if update_cargo_toml(&cargo_toml_updated).is_err() {
@@ -39,6 +39,7 @@ fn main() {
   git_add();
   git_commit(&new_version);
   git_tag(&new_version);
+  Ok(())
 }
 
 fn update_cargo_toml(new_cargo_toml: &str) -> Result<(), Box<dyn Error>> {
