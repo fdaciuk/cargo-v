@@ -40,6 +40,10 @@ fn parse_numeric_version(
     string_version_to_number(&current_version_string)?;
   let new_version_number = string_version_to_number(&new_version)?;
 
+  if new_version_number == current_version_number {
+    return Err("New version should not be the same as current version")?;
+  }
+
   if new_version_number < current_version_number {
     return Err("You can not set a version lower than the current version")?;
   }
