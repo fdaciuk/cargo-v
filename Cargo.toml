@@ -1,6 +1,6 @@
 [package]
 name = "cargo-v"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2021"
 description = "Update the version of your package easily"
 license = "MIT"
