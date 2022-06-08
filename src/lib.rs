@@ -110,7 +110,7 @@ mod tests {
       Err(e) => {
         assert_eq!(
           e.to_string(),
-          "Your Cargo.toml file does not have a \"version\" entry"
+          "your Cargo.toml file does not have a \"version\" entry"
         );
       }
       _ => unreachable!(),
@@ -190,6 +190,21 @@ mod tests {
   }
 
   #[test]
+  fn should_not_set_a_new_version_equal_to_the_current_version() {
+    let cargo_toml =
+      String::from("[package]\n name = \"cargo-v\"\n version = \"2.2.0\"\n");
+    let new_version = VersionLabel::NumericVersion(String::from("2.2.0"));
+    match update_version(&cargo_toml, &new_version) {
+      Err(e) => {
+        assert!(e
+          .to_string()
+          .contains("new version should not be the same as current version"));
+      }
+      _ => unreachable!(),
+    }
+  }
+
+  #[test]
   fn should_not_set_a_new_version_lower_than_current_version() {
     let cargo_toml =
       String::from("[package]\n name = \"cargo-v\"\n version = \"2.2.0\"\n");
@@ -197,7 +212,7 @@ mod tests {
     match update_version(&cargo_toml, &new_version) {
       Err(e) => {
         assert!(e.to_string().contains(
-          "You can not set a version lower than the current version"
+          "you can not set a version lower than the current version"
         ));
       }
       _ => unreachable!(),
