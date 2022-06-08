@@ -41,11 +41,11 @@ fn parse_numeric_version(
   let new_version_number = string_version_to_number(&new_version)?;
 
   if new_version_number == current_version_number {
-    return Err("New version should not be the same as current version")?;
+    return Err("new version should not be the same as current version")?;
   }
 
   if new_version_number < current_version_number {
-    return Err("You can not set a version lower than the current version")?;
+    return Err("you can not set a version lower than the current version")?;
   }
 
   Ok(new_version)
@@ -80,7 +80,7 @@ pub fn get_version(
 
   let version = match version {
     Some(v) => v,
-    None => Err("Your Cargo.toml file does not have a \"version\" entry")?,
+    None => Err("your Cargo.toml file does not have a \"version\" entry")?,
   };
 
   let mut version_split = version.split('.');
