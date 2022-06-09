@@ -2,14 +2,17 @@ use cargo_v;
 use std::process::Command;
 use std::{env, fs, io};
 
+enum Operation {
+  Help,
+  Version(String),
+}
+
 fn main() {
   let mut args = env::args().skip(2);
 
-  let new_version = match args.next() {
-    Some(v) => v,
-    None => error_exit(
-      "failed to read the version: you must pass (patch, minor, major, etc.)",
-    ),
+  let operation = match args.next() {
+    Some(argument) => parse_cli(argument),
+    None => usage(),
   };
 
   let cargo_toml = match fs::read_to_string("./Cargo.toml") {
@@ -17,11 +20,18 @@ fn main() {
     Err(e) => error_exit(&format!("failed to read Cargo.toml file: {}", e)),
   };
 
-  let new_version = match new_version.as_str() {
-    "patch" => cargo_v::VersionLabel::Patch,
-    "minor" => cargo_v::VersionLabel::Minor,
-    "major" => cargo_v::VersionLabel::Major,
-    v => cargo_v::VersionLabel::NumericVersion(String::from(v)),
+  if let Operation::Help = operation {
+    usage()
+  }
+
+  let new_version = match operation {
+    Operation::Version(v) => match v.as_str() {
+      "patch" => cargo_v::VersionLabel::Patch,
+      "minor" => cargo_v::VersionLabel::Minor,
+      "major" => cargo_v::VersionLabel::Major,
+      version => cargo_v::VersionLabel::NumericVersion(String::from(version)),
+    },
+    _ => unreachable!(),
   };
 
   let cargo_toml_updated =
@@ -60,6 +70,44 @@ fn main() {
 fn error_exit(msg: &str) -> ! {
   eprintln!("ERROR: {}", msg);
   std::process::exit(1);
+}
+
+fn usage() -> ! {
+  let usage = concat!(
+    "USAGE:\n",
+    "    cargo v <version>\n",
+    "    cargo v [options]\n",
+    "ARGUMENTS:\n",
+    "    version       Can be one of \"patch\", \"minor\", \"major\" or a string like \"v1.2.5\"\n",
+    "OPTIONS:\n",
+    "    -h, --help    Prints this message."
+  );
+
+  println!("{}", usage);
+  std::process::exit(0)
+}
+
+fn operation_of_string(arg: String) -> Operation {
+  match arg.as_str() {
+    "h" | "help" => Operation::Help,
+    _ => {
+      eprintln!("ERROR: invalid argument \"{}\"", arg);
+      usage();
+    }
+  }
+}
+
+fn parse_cli(argument: String) -> Operation {
+  if argument.starts_with('-') || argument.starts_with("--") {
+    let arg_name = argument
+      .chars()
+      .filter(|char| char != &'-')
+      .collect::<String>();
+
+    operation_of_string(arg_name)
+  } else {
+    Operation::Version(argument)
+  }
 }
 
 fn update_cargo_toml(new_cargo_toml: &str) -> io::Result<()> {
