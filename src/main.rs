@@ -2,6 +2,8 @@ use cargo_v;
 use std::process::Command;
 use std::{env, fs, io};
 
+mod parser;
+
 fn main() {
   let mut args = env::args().skip(2);
 
