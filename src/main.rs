@@ -87,8 +87,8 @@ fn usage() -> ! {
   std::process::exit(0)
 }
 
-fn operation_of_string(arg: String) -> Operation {
-  match arg.as_str() {
+fn operation_of_string(arg: &str) -> Operation {
+  match arg {
     "h" | "help" => Operation::Help,
     _ => {
       eprintln!("ERROR: invalid argument \"{}\"", arg);
@@ -104,7 +104,7 @@ fn parse_cli(argument: String) -> Operation {
       .filter(|char| char != &'-')
       .collect::<String>();
 
-    operation_of_string(arg_name)
+    operation_of_string(&arg_name)
   } else {
     Operation::Version(argument)
   }
