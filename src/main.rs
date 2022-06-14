@@ -20,10 +20,6 @@ fn main() {
     Err(e) => error_exit(&format!("failed to read Cargo.toml file: {}", e)),
   };
 
-  if let Operation::Help = operation {
-    usage()
-  }
-
   let new_version = match operation {
     Operation::Version(v) => match v.as_str() {
       "patch" => cargo_v::VersionLabel::Patch,
@@ -31,7 +27,7 @@ fn main() {
       "major" => cargo_v::VersionLabel::Major,
       version => cargo_v::VersionLabel::NumericVersion(String::from(version)),
     },
-    _ => unreachable!(),
+    Operation::Help => usage(),
   };
 
   let cargo_toml_updated =
