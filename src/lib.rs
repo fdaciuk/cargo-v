@@ -1,5 +1,7 @@
 use std::error::Error;
 
+pub mod parser;
+
 pub enum VersionLabel {
   Major,
   Minor,
@@ -22,12 +24,28 @@ pub fn update_version(
     }
   };
 
-  let result = cargo_toml_content.replace(
-    &tuple_version_to_string(&current_version_tuple),
+  Ok(parser::set_version_in_cargo_toml(
+    cargo_toml_content,
     &new_version,
-  );
+  ))
+}
 
-  Ok(result)
+pub fn tuple_version_to_string(tuple_version: &(u32, u32, u32)) -> String {
+  format!(
+    "{}.{}.{}",
+    tuple_version.0, tuple_version.1, tuple_version.2,
+  )
+}
+
+pub fn get_version(
+  cargo_toml_content: &str,
+) -> Result<(u32, u32, u32), Box<dyn Error>> {
+  let version = parser::get_version_from_cargo_toml(cargo_toml_content)?;
+  let mut version_split = version.split('.');
+  let major = version_split.next().unwrap().parse()?;
+  let minor = version_split.next().unwrap().parse()?;
+  let patch = version_split.next().unwrap().parse()?;
+  Ok((major, minor, patch))
 }
 
 fn parse_numeric_version(
@@ -55,144 +73,103 @@ fn string_version_to_number(version: &str) -> Result<u32, Box<dyn Error>> {
   Ok(version.replace(".", "").parse()?)
 }
 
-pub fn tuple_version_to_string(tuple_version: &(u32, u32, u32)) -> String {
-  format!(
-    "{}.{}.{}",
-    tuple_version.0, tuple_version.1, tuple_version.2,
-  )
-}
-
-pub fn get_version(
-  cargo_toml_content: &str,
-) -> Result<(u32, u32, u32), Box<dyn Error>> {
-  let version = cargo_toml_content
-    .lines()
-    .filter(|line| line.contains("version"))
-    .map(|line| {
-      line
-        .replace("version", "")
-        .replace('=', "")
-        .replace('"', "")
-        .trim()
-        .to_string()
-    })
-    .next();
-
-  let version = match version {
-    Some(v) => v,
-    None => Err("your Cargo.toml file does not have a \"version\" entry")?,
-  };
-
-  let mut version_split = version.split('.');
-  let major = version_split.next().unwrap().parse()?;
-  let minor = version_split.next().unwrap().parse()?;
-  let patch = version_split.next().unwrap().parse()?;
-  Ok((major, minor, patch))
-}
-
 #[cfg(test)]
 mod tests {
   use super::*;
 
-  #[test]
-  fn should_get_version_from_cargo_toml() {
-    let cargo_toml =
-      String::from("[package]\n name = \"cargo-v\"\n version = \"2.8.1\"\n");
-    let expected = (2, 8, 1);
+  fn get_cargo_toml(version: &str) -> String {
+    format!("\
+[dependencies]
+tokio = {{ version = \"1.1.1\" }}
 
-    assert_eq!(get_version(&cargo_toml).unwrap(), expected);
+[package]
+name = \"cargo-v\"
+version = \"{}\"
+edition = \"2021\"
+description = \"Update the version of your package easily\"
+license = \"MIT\"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies.dev]
+other = {{ version = \"1.1.8\" }}
+      ",
+    version)
   }
 
   #[test]
-  fn should_fail_if_cargo_toml_does_not_have_version() {
-    let cargo_toml = String::from("[package]\n name = \"cargo-v\"\n");
-    match get_version(&cargo_toml) {
-      Err(e) => {
-        assert_eq!(
-          e.to_string(),
-          "your Cargo.toml file does not have a \"version\" entry"
-        );
-      }
-      _ => unreachable!(),
-    }
+  fn should_get_version_from_cargo_toml() {
+    let cargo_toml = get_cargo_toml("2.8.1");
+    let actual = get_version(&cargo_toml).unwrap();
+    let expected = (2, 8, 1);
+    assert_eq!(actual, expected);
   }
 
   #[test]
   fn should_update_version_by_patch_label() {
-    let cargo_toml =
-      String::from("[package]\n name = \"cargo-v\"\n version = \"0.0.1\"\n");
+    let cargo_toml = get_cargo_toml("0.0.1");
     let new_version = VersionLabel::Patch;
-    let expected = "[package]\n name = \"cargo-v\"\n version = \"0.0.2\"\n";
-
-    assert_eq!(update_version(&cargo_toml, &new_version).unwrap(), expected);
+    let actual = update_version(&cargo_toml, &new_version).unwrap();
+    let expected = get_cargo_toml("0.0.2");
+    assert_eq!(actual, expected);
   }
 
   #[test]
   fn should_update_version_by_minor_label() {
-    let cargo_toml =
-      String::from("[package]\n name = \"cargo-v\"\n version = \"0.0.2\"\n");
+    let cargo_toml = get_cargo_toml("0.0.2");
     let new_version = VersionLabel::Minor;
-    let expected = "[package]\n name = \"cargo-v\"\n version = \"0.1.0\"\n";
-
-    assert_eq!(update_version(&cargo_toml, &new_version).unwrap(), expected);
+    let actual = update_version(&cargo_toml, &new_version).unwrap();
+    let expected = get_cargo_toml("0.1.0");
+    assert_eq!(actual, expected);
   }
 
   #[test]
   fn should_update_version_by_major_label() {
-    let cargo_toml =
-      String::from("[package]\n name = \"cargo-v\"\n version = \"0.1.2\"\n");
+    let cargo_toml = get_cargo_toml("0.1.8");
     let new_version = VersionLabel::Major;
-    let expected = "[package]\n name = \"cargo-v\"\n version = \"1.0.0\"\n";
-
-    assert_eq!(update_version(&cargo_toml, &new_version).unwrap(), expected);
+    let actual = update_version(&cargo_toml, &new_version).unwrap();
+    let expected = get_cargo_toml("1.0.0");
+    assert_eq!(actual, expected);
   }
 
   #[test]
   fn should_update_patch_version_by_hand() {
-    let cargo_toml =
-      String::from("[package]\n name = \"cargo-v\"\n version = \"0.0.1\"\n");
+    let cargo_toml = get_cargo_toml("0.0.1");
     let new_version = VersionLabel::NumericVersion(String::from("0.0.2"));
-    let expected = "[package]\n name = \"cargo-v\"\n version = \"0.0.2\"\n";
-
-    assert_eq!(update_version(&cargo_toml, &new_version).unwrap(), expected);
+    let actual = update_version(&cargo_toml, &new_version).unwrap();
+    let expected = get_cargo_toml("0.0.2");
+    assert_eq!(actual, expected);
   }
 
   #[test]
   fn should_update_minor_version_by_hand() {
-    let cargo_toml =
-      String::from("[package]\n name = \"cargo-v\"\n version = \"0.0.1\"\n");
+    let cargo_toml = get_cargo_toml("0.0.7");
     let new_version = VersionLabel::NumericVersion(String::from("0.1.0"));
-    let expected = "[package]\n name = \"cargo-v\"\n version = \"0.1.0\"\n";
-
-    assert_eq!(update_version(&cargo_toml, &new_version).unwrap(), expected);
+    let actual = update_version(&cargo_toml, &new_version).unwrap();
+    let expected = get_cargo_toml("0.1.0");
+    assert_eq!(actual, expected);
   }
 
   #[test]
   fn should_update_major_version_by_hand() {
-    let cargo_toml =
-      String::from("[package]\n name = \"cargo-v\"\n version = \"2.1.8\"\n");
+    let cargo_toml = get_cargo_toml("2.8.1");
     let new_version = VersionLabel::NumericVersion(String::from("3.0.0"));
-    let expected =
-      String::from("[package]\n name = \"cargo-v\"\n version = \"3.0.0\"\n");
-
-    assert_eq!(update_version(&cargo_toml, &new_version).unwrap(), expected);
+    let actual = update_version(&cargo_toml, &new_version).unwrap();
+    let expected = get_cargo_toml("3.0.0");
+    assert_eq!(actual, expected);
   }
 
   #[test]
   fn should_accept_v_char_in_front_of_version() {
-    let cargo_toml =
-      String::from("[package]\n name = \"cargo-v\"\n version = \"2.1.8\"\n");
+    let cargo_toml = get_cargo_toml("2.8.1");
     let new_version = VersionLabel::NumericVersion(String::from("v3.0.0"));
-    let expected =
-      String::from("[package]\n name = \"cargo-v\"\n version = \"3.0.0\"\n");
-
-    assert_eq!(update_version(&cargo_toml, &new_version).unwrap(), expected);
+    let actual = update_version(&cargo_toml, &new_version).unwrap();
+    let expected = get_cargo_toml("3.0.0");
+    assert_eq!(actual, expected);
   }
 
   #[test]
   fn should_not_set_a_new_version_equal_to_the_current_version() {
-    let cargo_toml =
-      String::from("[package]\n name = \"cargo-v\"\n version = \"2.2.0\"\n");
+    let cargo_toml = get_cargo_toml("2.2.0");
     let new_version = VersionLabel::NumericVersion(String::from("2.2.0"));
     match update_version(&cargo_toml, &new_version) {
       Err(e) => {
@@ -206,8 +183,7 @@ mod tests {
 
   #[test]
   fn should_not_set_a_new_version_lower_than_current_version() {
-    let cargo_toml =
-      String::from("[package]\n name = \"cargo-v\"\n version = \"2.2.0\"\n");
+    let cargo_toml = get_cargo_toml("2.1.2");
     let new_version = VersionLabel::NumericVersion(String::from("2.1.1"));
     match update_version(&cargo_toml, &new_version) {
       Err(e) => {
@@ -222,8 +198,7 @@ mod tests {
   #[test]
   // TODO: Give a more friendly error message
   fn should_not_allow_set_a_negative_version() {
-    let cargo_toml =
-      String::from("[package]\n name = \"cargo-v\"\n version = \"2.2.0\"\n");
+    let cargo_toml = get_cargo_toml("2.2.0");
     let new_version = VersionLabel::NumericVersion(String::from("-2.2.1"));
     match update_version(&cargo_toml, &new_version) {
       Err(e) => {
