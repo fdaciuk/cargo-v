@@ -1,7 +1,9 @@
 use std::error::Error;
 
-pub mod parser;
+mod parser;
+pub use parser::*;
 
+#[derive(Debug, PartialEq)]
 pub enum VersionLabel {
   Major,
   Minor,
@@ -9,7 +11,34 @@ pub enum VersionLabel {
   NumericVersion(String),
 }
 
-pub fn update_version(
+pub fn parse_string_to_version_label(
+  string: &str,
+) -> Result<VersionLabel, Box<dyn Error>> {
+  match string {
+    "patch" => Ok(VersionLabel::Patch),
+    "minor" => Ok(VersionLabel::Minor),
+    "major" => Ok(VersionLabel::Major),
+    string => {
+      if is_valid_numeric_version(string) {
+        return Ok(VersionLabel::NumericVersion(String::from(string)));
+      }
+
+      Err("invalid string version")?
+    }
+  }
+}
+
+fn is_valid_numeric_version(string: &str) -> bool {
+  string.split('.').take(3).all(|item| {
+    let number: Result<u32, _> = item.parse();
+    match number {
+      Ok(_) => true,
+      Err(_) => false,
+    }
+  })
+}
+
+pub fn get_updated_version(
   cargo_toml_content: &str,
   label: &VersionLabel,
 ) -> Result<String, Box<dyn Error>> {
@@ -24,10 +53,7 @@ pub fn update_version(
     }
   };
 
-  Ok(parser::set_version_in_cargo_toml(
-    cargo_toml_content,
-    &new_version,
-  ))
+  Ok(new_version)
 }
 
 pub fn tuple_version_to_string(tuple_version: &(u32, u32, u32)) -> String {
@@ -97,6 +123,43 @@ other = {{ version = \"1.1.8\" }}
   }
 
   #[test]
+  fn should_parse_string_patch_to_version_label() {
+    let actual = parse_string_to_version_label("patch").unwrap();
+    let expected = VersionLabel::Patch;
+    assert_eq!(actual, expected);
+  }
+
+  #[test]
+  fn should_parse_string_minor_to_version_label() {
+    let actual = parse_string_to_version_label("minor").unwrap();
+    let expected = VersionLabel::Minor;
+    assert_eq!(actual, expected);
+  }
+
+  #[test]
+  fn should_parse_string_major_to_version_label() {
+    let actual = parse_string_to_version_label("major").unwrap();
+    let expected = VersionLabel::Major;
+    assert_eq!(actual, expected);
+  }
+
+  #[test]
+  fn should_parse_numeric_string_to_version_label() {
+    let actual = parse_string_to_version_label("1.0.0").unwrap();
+    let expected = VersionLabel::NumericVersion(String::from("1.0.0"));
+    assert_eq!(actual, expected);
+  }
+
+  #[test]
+  fn should_fail_to_parse_string_to_version_label() {
+    let actual = parse_string_to_version_label("rice");
+    match actual {
+      Err(e) => assert!(e.to_string().contains("invalid string version")),
+      Ok(_) => unreachable!(),
+    };
+  }
+
+  #[test]
   fn should_get_version_from_cargo_toml() {
     let cargo_toml = get_cargo_toml("2.8.1");
     let actual = get_version(&cargo_toml).unwrap();
@@ -107,8 +170,9 @@ other = {{ version = \"1.1.8\" }}
   #[test]
   fn should_update_version_by_patch_label() {
     let cargo_toml = get_cargo_toml("0.0.1");
-    let new_version = VersionLabel::Patch;
-    let actual = update_version(&cargo_toml, &new_version).unwrap();
+    let new_version =
+      get_updated_version(&cargo_toml, &VersionLabel::Patch).unwrap();
+    let actual = set_version_in_cargo_toml(&cargo_toml, &new_version);
     let expected = get_cargo_toml("0.0.2");
     assert_eq!(actual, expected);
   }
@@ -116,8 +180,9 @@ other = {{ version = \"1.1.8\" }}
   #[test]
   fn should_update_version_by_minor_label() {
     let cargo_toml = get_cargo_toml("0.0.2");
-    let new_version = VersionLabel::Minor;
-    let actual = update_version(&cargo_toml, &new_version).unwrap();
+    let new_version =
+      get_updated_version(&cargo_toml, &VersionLabel::Minor).unwrap();
+    let actual = set_version_in_cargo_toml(&cargo_toml, &new_version);
     let expected = get_cargo_toml("0.1.0");
     assert_eq!(actual, expected);
   }
@@ -125,8 +190,9 @@ other = {{ version = \"1.1.8\" }}
   #[test]
   fn should_update_version_by_major_label() {
     let cargo_toml = get_cargo_toml("0.1.8");
-    let new_version = VersionLabel::Major;
-    let actual = update_version(&cargo_toml, &new_version).unwrap();
+    let new_version =
+      get_updated_version(&cargo_toml, &VersionLabel::Major).unwrap();
+    let actual = set_version_in_cargo_toml(&cargo_toml, &new_version);
     let expected = get_cargo_toml("1.0.0");
     assert_eq!(actual, expected);
   }
@@ -134,8 +200,12 @@ other = {{ version = \"1.1.8\" }}
   #[test]
   fn should_update_patch_version_by_hand() {
     let cargo_toml = get_cargo_toml("0.0.1");
-    let new_version = VersionLabel::NumericVersion(String::from("0.0.2"));
-    let actual = update_version(&cargo_toml, &new_version).unwrap();
+    let new_version = get_updated_version(
+      &cargo_toml,
+      &VersionLabel::NumericVersion(String::from("0.0.2")),
+    )
+    .unwrap();
+    let actual = set_version_in_cargo_toml(&cargo_toml, &new_version);
     let expected = get_cargo_toml("0.0.2");
     assert_eq!(actual, expected);
   }
@@ -143,8 +213,12 @@ other = {{ version = \"1.1.8\" }}
   #[test]
   fn should_update_minor_version_by_hand() {
     let cargo_toml = get_cargo_toml("0.0.7");
-    let new_version = VersionLabel::NumericVersion(String::from("0.1.0"));
-    let actual = update_version(&cargo_toml, &new_version).unwrap();
+    let new_version = get_updated_version(
+      &cargo_toml,
+      &VersionLabel::NumericVersion(String::from("0.1.0")),
+    )
+    .unwrap();
+    let actual = set_version_in_cargo_toml(&cargo_toml, &new_version);
     let expected = get_cargo_toml("0.1.0");
     assert_eq!(actual, expected);
   }
@@ -152,8 +226,12 @@ other = {{ version = \"1.1.8\" }}
   #[test]
   fn should_update_major_version_by_hand() {
     let cargo_toml = get_cargo_toml("2.8.1");
-    let new_version = VersionLabel::NumericVersion(String::from("3.0.0"));
-    let actual = update_version(&cargo_toml, &new_version).unwrap();
+    let new_version = get_updated_version(
+      &cargo_toml,
+      &VersionLabel::NumericVersion(String::from("3.0.0")),
+    )
+    .unwrap();
+    let actual = set_version_in_cargo_toml(&cargo_toml, &new_version);
     let expected = get_cargo_toml("3.0.0");
     assert_eq!(actual, expected);
   }
@@ -161,8 +239,12 @@ other = {{ version = \"1.1.8\" }}
   #[test]
   fn should_accept_v_char_in_front_of_version() {
     let cargo_toml = get_cargo_toml("2.8.1");
-    let new_version = VersionLabel::NumericVersion(String::from("v3.0.0"));
-    let actual = update_version(&cargo_toml, &new_version).unwrap();
+    let new_version = get_updated_version(
+      &cargo_toml,
+      &VersionLabel::NumericVersion(String::from("v3.0.0")),
+    )
+    .unwrap();
+    let actual = set_version_in_cargo_toml(&cargo_toml, &new_version);
     let expected = get_cargo_toml("3.0.0");
     assert_eq!(actual, expected);
   }
@@ -170,22 +252,26 @@ other = {{ version = \"1.1.8\" }}
   #[test]
   fn should_not_set_a_new_version_equal_to_the_current_version() {
     let cargo_toml = get_cargo_toml("2.2.0");
-    let new_version = VersionLabel::NumericVersion(String::from("2.2.0"));
-    match update_version(&cargo_toml, &new_version) {
+    match get_updated_version(
+      &cargo_toml,
+      &VersionLabel::NumericVersion(String::from("2.2.0")),
+    ) {
       Err(e) => {
         assert!(e
           .to_string()
           .contains("new version should not be the same as current version"));
       }
       _ => unreachable!(),
-    }
+    };
   }
 
   #[test]
   fn should_not_set_a_new_version_lower_than_current_version() {
     let cargo_toml = get_cargo_toml("2.1.2");
-    let new_version = VersionLabel::NumericVersion(String::from("2.1.1"));
-    match update_version(&cargo_toml, &new_version) {
+    match get_updated_version(
+      &cargo_toml,
+      &VersionLabel::NumericVersion(String::from("2.1.1")),
+    ) {
       Err(e) => {
         assert!(e.to_string().contains(
           "you can not set a version lower than the current version"
@@ -199,8 +285,10 @@ other = {{ version = \"1.1.8\" }}
   // TODO: Give a more friendly error message
   fn should_not_allow_set_a_negative_version() {
     let cargo_toml = get_cargo_toml("2.2.0");
-    let new_version = VersionLabel::NumericVersion(String::from("-2.2.1"));
-    match update_version(&cargo_toml, &new_version) {
+    match get_updated_version(
+      &cargo_toml,
+      &VersionLabel::NumericVersion(String::from("-2.2.1")),
+    ) {
       Err(e) => {
         assert_eq!(e.to_string(), "invalid digit found in string");
       }

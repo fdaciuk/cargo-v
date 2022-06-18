@@ -17,36 +17,52 @@ fn main() {
 
   let cargo_toml = match fs::read_to_string("./Cargo.toml") {
     Ok(toml) => toml,
-    Err(e) => error_exit(&format!("failed to read Cargo.toml file: {}", e)),
+    Err(e) => error_exit(&format!("failed to read Cargo.toml file: {e}")),
+  };
+
+  let cargo_lock = match fs::read_to_string("./Cargo.lock") {
+    Ok(file) => file,
+    Err(e) => error_exit(&format!("failed to read Cargo.lock file: {e}")),
   };
 
   let new_version = match operation {
-    Operation::Version(v) => match v.as_str() {
-      "patch" => cargo_v::VersionLabel::Patch,
-      "minor" => cargo_v::VersionLabel::Minor,
-      "major" => cargo_v::VersionLabel::Major,
-      version => cargo_v::VersionLabel::NumericVersion(String::from(version)),
-    },
+    Operation::Version(version) => {
+      match cargo_v::parse_string_to_version_label(&version) {
+        Ok(version) => version,
+        Err(e) => {
+          eprintln!("ERROR: {e}");
+          usage()
+        }
+      }
+    }
     Operation::Help => usage(),
   };
 
-  let cargo_toml_updated =
-    match cargo_v::update_version(&cargo_toml, &new_version) {
-      Ok(toml) => toml,
+  let new_version =
+    match cargo_v::get_updated_version(&cargo_toml, &new_version) {
+      Ok(version) => version,
       Err(e) => error_exit(&e.to_string()),
     };
 
-  let new_version = match cargo_v::get_version(&cargo_toml_updated) {
-    Ok(v) => v,
+  let cargo_toml_updated =
+    cargo_v::set_version_in_cargo_toml(&cargo_toml, &new_version);
+
+  let project_name = match cargo_v::get_name_from_cargo_toml(&cargo_toml) {
+    Ok(name) => name,
     Err(e) => error_exit(&e.to_string()),
   };
-  let new_version = cargo_v::tuple_version_to_string(&new_version);
+
+  let cargo_lock_updated = cargo_v::set_version_in_cargo_lock(
+    &cargo_lock,
+    &project_name,
+    &new_version,
+  );
 
   if let Err(e) = update_cargo_toml(&cargo_toml_updated) {
     error_exit(&format!("failed to write on file Cargo.toml: {e}"));
   }
 
-  if let Err(e) = run_build() {
+  if let Err(e) = update_cargo_lock(&cargo_lock_updated) {
     error_exit(&format!("failed to run build: {e}"));
   }
 
@@ -111,10 +127,8 @@ fn update_cargo_toml(new_cargo_toml: &str) -> io::Result<()> {
   Ok(())
 }
 
-fn run_build() -> io::Result<()> {
-  Command::new("cargo")
-    .args(["build", "--release"])
-    .output()?;
+fn update_cargo_lock(new_cargo_lock: &str) -> io::Result<()> {
+  fs::write("./Cargo.lock", new_cargo_lock)?;
   Ok(())
 }
 
