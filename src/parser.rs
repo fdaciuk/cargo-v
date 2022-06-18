@@ -82,7 +82,7 @@ pub fn set_version_in_cargo_lock(
   new_cargo_lock.join("\n")
 }
 
-fn get_name_from_cargo_toml(
+pub fn get_name_from_cargo_toml(
   cargo_toml: &str,
 ) -> Result<String, Box<dyn Error>> {
   get_prop_from_cargo_toml(cargo_toml, "name")
