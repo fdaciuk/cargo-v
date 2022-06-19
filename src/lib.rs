@@ -29,13 +29,10 @@ pub fn parse_string_to_version_label(
 }
 
 fn is_valid_numeric_version(string: &str) -> bool {
-  string.split('.').take(3).all(|item| {
-    let number: Result<u32, _> = item.parse();
-    match number {
-      Ok(_) => true,
-      Err(_) => false,
-    }
-  })
+  string
+    .split('.')
+    .take(3)
+    .all(|item| item.parse::<u32>().is_ok())
 }
 
 pub fn get_updated_version(
