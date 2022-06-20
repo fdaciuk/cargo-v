@@ -6,13 +6,18 @@ pub fn usage() -> ! {
 }
 
 pub fn usage_error(msg: &str) -> ! {
+  eprintln!("{}\n", error_message(msg));
   help_message();
-  error_exit(msg);
+  std::process::exit(1);
 }
 
 pub fn error_exit(msg: &str) -> ! {
-  eprintln!("ERROR: {msg}");
+  eprintln!("{}", error_message(msg));
   std::process::exit(1);
+}
+
+fn error_message(msg: &str) -> String {
+  format!("ERROR: {msg}")
 }
 
 fn help_message() {
