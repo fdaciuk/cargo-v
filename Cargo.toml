@@ -7,7 +7,7 @@ license = "MIT"
 authors = ["Fernando Daciuk - @fdaciuk"]
 readme = "README.md"
 repository = "https://github.com/fdaciuk/cargo-v"
-keywords = ["version", "cli", "semver", "semantic", "versioning", "git", "commit", "tag"]
+keywords = ["version", "cli", "semver", "semantic", "versioning"]
 categories = ["command-line-interface", "config", "development-tools"]
 include = ["Cargo.lock", "Cargo.toml", "README.md", "src"]
 
