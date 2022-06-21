@@ -39,7 +39,7 @@ pub fn get_updated_version(
   cargo_toml_content: &str,
   label: &VersionLabel,
 ) -> Result<String, Box<dyn Error>> {
-  let current_version_tuple = get_version(&cargo_toml_content)?;
+  let current_version_tuple = get_version(cargo_toml_content)?;
   let (major, minor, patch) = current_version_tuple;
   let new_version = match label {
     VersionLabel::Major => format!("{}.0.0", major + 1),
@@ -75,7 +75,7 @@ fn parse_numeric_version(
   current_version_tuple: &(u32, u32, u32),
   numeric_version: &str,
 ) -> Result<String, Box<dyn Error>> {
-  let new_version = numeric_version.replace("v", "");
+  let new_version = numeric_version.replace('v', "");
   let current_version_string = tuple_version_to_string(current_version_tuple);
   let current_version_number =
     string_version_to_number(&current_version_string)?;
@@ -93,7 +93,7 @@ fn parse_numeric_version(
 }
 
 fn string_version_to_number(version: &str) -> Result<u32, Box<dyn Error>> {
-  Ok(version.replace(".", "").parse()?)
+  Ok(version.replace('.', "").parse()?)
 }
 
 #[cfg(test)]

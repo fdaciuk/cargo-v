@@ -20,10 +20,8 @@ pub fn get_version_from_cargo_lock(
       should_copy = line.starts_with(&format!("name = \"{}\"", project_name));
     }
 
-    if should_copy {
-      if line.starts_with("version") {
-        version = Some(get_value_from_toml_line(line, "version"));
-      }
+    if should_copy && line.starts_with("version") {
+      version = Some(get_value_from_toml_line(line, "version"));
     }
   }
 
@@ -40,15 +38,14 @@ pub fn set_version_in_cargo_toml(cargo_toml: &str, version: &str) -> String {
 
   for line in lines {
     let mut new_line = line.to_owned();
-    if line.starts_with("[") {
+    if line.starts_with('[') {
       should_write = line.starts_with("[package]");
     }
 
-    if should_write {
-      if line.starts_with("version") {
-        new_line = format!("version = \"{}\"", version);
-      }
+    if should_write && line.starts_with("version") {
+      new_line = format!("version = \"{}\"", version);
     }
+
     new_cargo_toml.push(new_line);
   }
 
@@ -70,10 +67,8 @@ pub fn set_version_in_cargo_lock(
       should_write = line.starts_with(&format!("name = \"{}\"", project_name));
     }
 
-    if should_write {
-      if line.starts_with("version") {
-        new_line = format!("version = \"{}\"", version);
-      }
+    if should_write && line.starts_with("version") {
+      new_line = format!("version = \"{}\"", version);
     }
 
     new_cargo_lock.push(new_line);
@@ -97,14 +92,12 @@ fn get_prop_from_cargo_toml(
   let mut should_copy = false;
 
   for line in lines {
-    if line.starts_with("[") {
+    if line.starts_with('[') {
       should_copy = line.starts_with("[package]")
     }
 
-    if should_copy {
-      if line.starts_with(prop) {
-        property = Some(get_value_from_toml_line(line, prop));
-      }
+    if should_copy && line.starts_with(prop) {
+      property = Some(get_value_from_toml_line(line, prop));
     }
   }
 

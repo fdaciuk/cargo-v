@@ -25,7 +25,7 @@ pub fn get_new_version(operation: &Operation, cargo_toml: &str) -> String {
   let new_version = match operation {
     Operation::Help => help::usage(),
     Operation::Version(version) => {
-      match cargo_v::parse_string_to_version_label(&version) {
+      match cargo_v::parse_string_to_version_label(version) {
         Ok(version) => version,
         Err(e) => help::usage_error(&e.to_string()),
       }
