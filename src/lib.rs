@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::error::Error;
 
 mod parser;
@@ -81,15 +82,15 @@ fn parse_numeric_version(
     string_version_to_number(&current_version_string)?;
   let new_version_number = string_version_to_number(&new_version)?;
 
-  if new_version_number == current_version_number {
-    return Err("new version should not be the same as current version")?;
+  match new_version_number.cmp(&current_version_number) {
+    Ordering::Less => {
+      Err("you can not set a version lower than the current version")?
+    }
+    Ordering::Equal => {
+      Err("new version should not be the same as current version")?
+    }
+    Ordering::Greater => Ok(new_version),
   }
-
-  if new_version_number < current_version_number {
-    return Err("you can not set a version lower than the current version")?;
-  }
-
-  Ok(new_version)
 }
 
 fn string_version_to_number(version: &str) -> Result<u32, Box<dyn Error>> {
