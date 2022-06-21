@@ -14,101 +14,31 @@
 cargo install cargo-v
 ```
 
+This CLI is intended to update the version of your package using the [SemVer](https://semver.org).
+
+## Important note
+
+Before using this CLI, make sure you:
+  - run the `cargo build` command to ensure your package doesn't have any errors;
+  - have committed all important files (including `Cargo.toml` and `Cargo.lock`, that will be "git added" automatically by the CLI);
+
 ## Usage
 
 You can update the version of your project using the command:
 
 ```sh
-cargo v patch
+cargo v <version>
 ```
 
-The above command will update the `patch` part of version from your `Cargo.toml`, 
-it will run `cargo build` to update `Cargo.lock` file, and create a commit and 
-a git tag with the new version, if you are using git.
+When `<version>` can be on of `patch`, `minor`, `major` or a string like `v1.1.0` or just `1.1.0`.
 
-You can use four options to update the version: `patch`, `minor`, `major` or a 
-manually typed version (like `1.0.1`).
+The above command will do:
+  - update the string version of your package from `Cargo.toml`;
+  - update the string version of your package from `Cargo.lock`;
+  - create a git commit with new version;
+  - and create a git tag with new version.
 
-### patch
-
-will change the latest number of version:
-
-**Command:**
-
-```sh
-cargo v patch
-```
-
-**Update in Cargo.toml:**
-
-```toml
-[package]
-name = "cargo-v"
-version = "0.0.2"
-#              ^ This number will be updated
-```
-
-### minor
-
-will change the middle number of version:
-
-**Command:**
-
-```sh
-cargo v minor
-```
-
-**Update in Cargo.toml:**
-
-```toml
-[package]
-name = "cargo-v"
-version = "0.1.0"
-#            ^ This number will be updated
-```
-
-### major
-
-will change the first number of version:
-
-**Command:**
-
-```sh
-cargo v major
-```
-
-**Update in Cargo.toml:**
-
-```toml
-[package]
-name = "cargo-v"
-version = "1.0.0"
-#          ^ This number will be updated
-```
-
-### manually typed version
-
-will change the version with the exact entry:
-
-**Command:**
-
-```sh
-cargo v 1.0.1
-```
-
-**Update in Cargo.toml:**
-
-```toml
-[package]
-name = "cargo-v"
-version = "1.0.1"
-```
-
-## Run tests
-
-```sh
-cargo test
-```
+To see all possible options, just run `cargo v --help`.
 
 ## Author
 
