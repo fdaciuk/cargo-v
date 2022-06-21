@@ -6,6 +6,16 @@
   "commit": false,
   "contributors": [
     {
+      "login": "fdaciuk",
+      "name": "Fernando Daciuk",
+      "avatar_url": "https://avatars.githubusercontent.com/u/487669?v=4",
+      "profile": "https://github.com/fdaciuk",
+      "contributions": [
+        "code",
+        "doc"
+      ]
+    },
+    {
       "login": "mxthevs",
       "name": "Matheus Henrique",
       "avatar_url": "https://avatars.githubusercontent.com/u/46231311?v=4",
