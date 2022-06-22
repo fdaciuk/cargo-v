@@ -1,4 +1,3 @@
-use crate::cli_parser::Operation;
 use crate::help;
 use cargo_v;
 use std::fs;
@@ -21,15 +20,11 @@ pub fn get_cargo_lock_updated(
   cargo_v::set_version_in_cargo_lock(cargo_lock, &project_name, new_version)
 }
 
-pub fn get_new_version(operation: &Operation, cargo_toml: &str) -> String {
-  let new_version = match operation {
-    Operation::Help => help::usage(),
-    Operation::Version(version) => {
-      match cargo_v::parse_string_to_version_label(version) {
-        Ok(version) => version,
-        Err(e) => help::usage_error(&e.to_string()),
-      }
-    }
+pub fn get_new_version(version_string: &str, cargo_toml: &str) -> String {
+  let new_version = match cargo_v::parse_string_to_version_label(version_string)
+  {
+    Ok(version) => version,
+    Err(e) => help::usage_error(&e.to_string()),
   };
 
   match cargo_v::get_updated_version(cargo_toml, &new_version) {
