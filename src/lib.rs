@@ -19,16 +19,37 @@ pub fn parse_string_to_version_label(
     "patch" => Ok(VersionLabel::Patch),
     "minor" => Ok(VersionLabel::Minor),
     "major" => Ok(VersionLabel::Major),
-    string => {
-      if is_valid_numeric_version(string) {
-        return Ok(VersionLabel::NumericVersion(String::from(string)));
-      }
-
-      Err("invalid string version")?
-    }
+    string => Ok(VersionLabel::NumericVersion(normalize_numeric_version(
+      string,
+    )?)),
   }
 }
 
+fn normalize_numeric_version(string: &str) -> Result<String, Box<dyn Error>> {
+  let version = match dot_counter(string) {
+    0 => format!("{}.0.0", string),
+    1 => format!("{}.0", string),
+    _ => string.into(),
+  };
+  let version = version.replace("v", "");
+  if is_valid_numeric_version(&version) {
+    return Ok(version);
+  }
+
+  Err(format!("invalid string version: {}", version))?
+}
+
+fn dot_counter(string: &str) -> usize {
+  let mut counter = 0;
+  for ch in string.chars() {
+    if ch == '.' {
+      counter += 1
+    }
+  }
+  counter
+}
+
+#[inline]
 fn is_valid_numeric_version(string: &str) -> bool {
   string
     .split('.')
@@ -233,6 +254,25 @@ other = {{ version = \"1.1.8\" }}
     let expected = get_cargo_toml("3.0.0");
     assert_eq!(actual, expected);
   }
+
+  #[test]
+  fn should_normalize_version_with_only_partial_version_given() {
+    let cases = vec![
+      ("v1", "1.0.0".to_string()),
+      ("2", "2.0.0".to_string()),
+      ("v2.3", "2.3.0".to_string()),
+      ("2.8", "2.8.0".to_string()),
+      ("v2.1.4", "2.1.4".to_string()),
+      ("2.1.3", "2.1.3".to_string()),
+    ];
+
+    for (to_parse, expected) in cases {
+      let normalized_version = normalize_numeric_version(to_parse).unwrap();
+      assert_eq!(expected, normalized_version)
+    }
+ 
+  }
+
 
   #[test]
   fn should_accept_v_char_in_front_of_version() {
