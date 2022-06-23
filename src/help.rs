@@ -24,11 +24,13 @@ fn help_message() {
   let usage = concat!(
     "USAGE:\n",
     "    cargo v <version>\n",
+    "    cargo v <version> -y\n",
     "    cargo v [options]\n",
     "ARGUMENTS:\n",
     "    version       Can be one of \"patch\", \"minor\", \"major\" or a string like \"v1.2.5\"\n",
     "OPTIONS:\n",
-    "    -h, --help    Prints this message."
+    "    -h, --help    Prints this message.",
+    "    -y, --yes     Answer \"yes\" for all questions",
   );
 
   println!("{usage}");
