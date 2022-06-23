@@ -14,25 +14,37 @@ pub fn ask_questions(yes_to_all: bool) {
 }
 
 fn questions() -> Result<(), Box<dyn Error>> {
-  let mut answer1 = String::new();
-  let mut answer2 = String::new();
-
-  print!("Have you run the command `cargo build` already to make sure your application has no erros? [Y]es [N]o: ");
-  let _ = io::stdout().flush();
-  io::stdin().read_line(&mut answer1)?;
-  let answer1 = answer1.trim().to_lowercase();
-
-  if answer1 != "y" && answer1 != "yes" {
+  let question1 = create_question("Have you run the command `cargo build` already to make sure your application has no erros? [Y]es [N]o: ")?;
+  if not(question1.yes) {
     return Err("run `cargo build` and make sure the project has no errors before using `cargo-v`")?;
   }
 
-  print!("All important files are \"git added\" and \"commited\" (specially `Cargo.toml` and `Cargo.lock`)? [Y]es [N]o: ");
-  let _ = io::stdout().flush();
-  io::stdin().read_line(&mut answer2)?;
-  let answer2 = answer2.trim().to_lowercase();
-  if answer2 != "y" && answer2 != "yes" {
+  let question2 = create_question("All important files are \"git added\" and \"commited\" (specially `Cargo.toml` and `Cargo.lock`)? [Y]es [N]o: ")?;
+  if not(question2.yes) {
     return Err("please, commit all important files before run `cargo-v`")?;
   }
 
   Ok(())
+}
+
+struct Answer {
+  yes: bool,
+}
+
+fn create_question(question: &str) -> Result<Answer, Box<dyn Error>> {
+  let mut answer = String::new();
+  print!("{question}");
+  io::stdout().flush().unwrap();
+  io::stdin().read_line(&mut answer)?;
+  let answer = answer.trim().to_lowercase();
+
+  if answer == "y" || answer == "yes" {
+    return Ok(Answer { yes: true });
+  }
+
+  Ok(Answer { yes: false })
+}
+
+fn not(value: bool) -> bool {
+  !value
 }
