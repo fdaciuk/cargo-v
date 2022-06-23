@@ -31,7 +31,7 @@ fn normalize_numeric_version(string: &str) -> Result<String, Box<dyn Error>> {
     1 => format!("{}.0", string),
     _ => string.into(),
   };
-  let version = version.replace("v", "");
+  let version = version.replace('v', "");
   if is_valid_numeric_version(&version) {
     return Ok(version);
   }
@@ -270,9 +270,7 @@ other = {{ version = \"1.1.8\" }}
       let normalized_version = normalize_numeric_version(to_parse).unwrap();
       assert_eq!(expected, normalized_version)
     }
- 
   }
-
 
   #[test]
   fn should_accept_v_char_in_front_of_version() {
