@@ -280,6 +280,35 @@ other = {{ version = \"1.1.8\" }}
   }
 
   #[test]
+  fn should_pad_partial_version_with_leading_zeroes() {
+    let partial_version = "1";
+    let actual = get_padded_version(partial_version).unwrap();
+    let expected = "1.0.0";
+    assert_eq!(actual, expected);
+  }
+
+  #[test]
+  fn should_turn_string_version_in_tuple() {
+    let actual = string_version_to_tuple("1.0.0").unwrap();
+    let expected = (1, 0, 0);
+    assert_eq!(actual, expected);
+  }
+
+  #[test]
+  fn should_turn_partial_string_version_in_tuple() {
+    let actual = string_version_to_tuple("1").unwrap();
+    let expected = (1, 0, 0);
+    assert_eq!(actual, expected);
+  }
+
+  #[test]
+  fn should_turn_tuple_version_in_string() {
+    let actual = tuple_version_to_string(&(1, 2, 3));
+    let expected = "1.2.3";
+    assert_eq!(actual, expected);
+  }
+
+  #[test]
   // TODO: Give a more friendly error message
   fn should_not_allow_set_a_negative_version() {
     let cargo_toml = get_cargo_toml("2.2.0");
