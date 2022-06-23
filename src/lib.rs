@@ -40,14 +40,16 @@ pub fn get_updated_version(
   cargo_toml_content: &str,
   label: &VersionLabel,
 ) -> Result<String, Box<dyn Error>> {
-  let current_version_tuple = get_version(cargo_toml_content)?;
-  let (major, minor, patch) = current_version_tuple;
+  let current_version =
+    parser::get_version_from_cargo_toml(cargo_toml_content)?;
+  let current_version = string_version_to_tuple(&current_version)?;
+  let (major, minor, patch) = current_version;
   let new_version = match label {
     VersionLabel::Major => format!("{}.0.0", major + 1),
     VersionLabel::Minor => format!("{}.{}.0", major, minor + 1),
     VersionLabel::Patch => format!("{}.{}.{}", major, minor, patch + 1),
     VersionLabel::NumericVersion(v) => {
-      parse_numeric_version(&current_version_tuple, v)?
+      parse_numeric_version(&current_version, v)?
     }
   };
 
@@ -61,14 +63,20 @@ pub fn tuple_version_to_string(tuple_version: &(u32, u32, u32)) -> String {
   )
 }
 
-pub fn get_version(
-  cargo_toml_content: &str,
+fn get_padded_version(numeric_version: &str) -> Result<String, Box<dyn Error>> {
+  let (major, minor, patch) = string_version_to_tuple(numeric_version)?;
+  let new_version = format!("{}.{}.{}", major, minor, patch);
+  Ok(new_version)
+}
+
+fn string_version_to_tuple(
+  version: &str,
 ) -> Result<(u32, u32, u32), Box<dyn Error>> {
-  let version = parser::get_version_from_cargo_toml(cargo_toml_content)?;
+  let version = version.replace('v', "");
   let mut version_split = version.split('.');
-  let major = version_split.next().unwrap().parse()?;
-  let minor = version_split.next().unwrap().parse()?;
-  let patch = version_split.next().unwrap().parse()?;
+  let major = version_split.next().unwrap_or("0").parse::<u32>()?;
+  let minor = version_split.next().unwrap_or("0").parse::<u32>()?;
+  let patch = version_split.next().unwrap_or("0").parse::<u32>()?;
   Ok((major, minor, patch))
 }
 
@@ -76,7 +84,7 @@ fn parse_numeric_version(
   current_version_tuple: &(u32, u32, u32),
   numeric_version: &str,
 ) -> Result<String, Box<dyn Error>> {
-  let new_version = numeric_version.replace('v', "");
+  let new_version = get_padded_version(numeric_version)?;
   let current_version_string = tuple_version_to_string(current_version_tuple);
   let current_version_number =
     string_version_to_number(&current_version_string)?;
@@ -155,14 +163,6 @@ other = {{ version = \"1.1.8\" }}
       Err(e) => assert!(e.to_string().contains("invalid string version")),
       Ok(_) => unreachable!(),
     };
-  }
-
-  #[test]
-  fn should_get_version_from_cargo_toml() {
-    let cargo_toml = get_cargo_toml("2.8.1");
-    let actual = get_version(&cargo_toml).unwrap();
-    let expected = (2, 8, 1);
-    assert_eq!(actual, expected);
   }
 
   #[test]
