@@ -40,6 +40,13 @@ The above command will do:
   - create a git commit with new version;
   - and create a git tag with new version.
 
+Before do a `git commit` and `git tag`, you will be asked if everything is ok with your project.
+To automatically answer **yes** to all questions, just use the flag `-y` or `--yes`:
+
+```sh
+cargo v <version> -y
+```
+
 To see all possible options, just run `cargo v --help`.
 
 ## Author
