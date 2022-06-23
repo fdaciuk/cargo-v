@@ -30,7 +30,7 @@ jobs:
       run: cargo install cargo-v
 
     - name: Generate new version
-      run: cargo v ${{ github.event.inputs.version }}
+      run: cargo v ${{ github.event.inputs.version }} -y
 
     - name: Push new version tag to repository
       run: git push origin main --tags
