@@ -32,7 +32,11 @@ You can update the version of your project using the command:
 cargo v <version>
 ```
 
-When `<version>` can be on of `patch`, `minor`, `major` or a string like `v1.1.0` or just `1.1.0`.
+Where `<version>` can be one of `patch`, `minor`, `major` or a complete string 
+version like `v1.1.0` or just `1.1.0`. 
+
+You can use `<version>` just as a partial string version like `2` or `2.1`, that 
+is the same as `v2.0.0` and `v2.1.0` respectively.
 
 The above command will do:
   - update the string version of your package from `Cargo.toml`;
