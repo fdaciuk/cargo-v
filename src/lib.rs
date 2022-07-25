@@ -309,7 +309,6 @@ other = {{ version = \"1.1.8\" }}
   }
 
   #[test]
-  // TODO: Give a more friendly error message
   fn should_not_allow_set_a_negative_version() {
     let cargo_toml = get_cargo_toml("2.2.0");
     match get_updated_version(
